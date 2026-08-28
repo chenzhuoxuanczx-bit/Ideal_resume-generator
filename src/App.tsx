@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import './App.css'
+import { generateResumeViaArk } from './ark-resume'
 import {
   generateIdealResume,
   sampleJobDescription,
@@ -20,6 +21,7 @@ function App() {
   const [debugLogText, setDebugLogText] = useState('')
   const [debugLogPath, setDebugLogPath] = useState('')
   const [isLoadingLogs, setIsLoadingLogs] = useState(false)
+  const [apiKey, setApiKey] = useState('')
 
   const matchedSignals = summarizeSignals(jobDescription)
 
@@ -29,36 +31,54 @@ function App() {
     setStatusMessage('Generating a quantified sample resume from the JD...')
 
     try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ jobDescription }),
-      })
+      const trimmedApiKey = apiKey.trim()
 
-      const payload = (await response.json()) as {
-        error?: string
-        resume?: ResumeData
+      if (trimmedApiKey) {
+        const generatedResume = await generateResumeViaArk({
+          apiKey: trimmedApiKey,
+          jobDescription,
+        })
+
+        setResume(generatedResume)
+        setStatusMessage(
+          'Generated with the API key entered in the page. Every bullet passed measurable-impact validation.',
+        )
+      } else {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ jobDescription }),
+        })
+
+        const payload = (await response.json()) as {
+          error?: string
+          resume?: ResumeData
+        }
+
+        if (!response.ok || !payload.resume) {
+          throw new Error(payload.error || 'Generation failed.')
+        }
+
+        setResume(payload.resume)
+        setStatusMessage(
+          'Generated with the local backend configuration. Every bullet passed measurable-impact validation.',
+        )
       }
-
-      if (!response.ok || !payload.resume) {
-        throw new Error(payload.error || 'Generation failed.')
-      }
-
-      setResume(payload.resume)
-      setStatusMessage(
-        'Generated with Volcengine Ark. Every bullet passed measurable-impact validation.',
-      )
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Generation failed unexpectedly.'
       setResume(generateIdealResume(jobDescription))
       setErrorMessage(message)
       setStatusMessage(
-        'Fell back to local sample mode. Check the local .env file to enable live model generation.',
+        apiKey.trim()
+          ? 'Fell back to local sample mode. Check the typed API key or the browser console to debug the live request.'
+          : 'Fell back to local sample mode. Add an API key in the page or configure the local .env file to enable live model generation.',
       )
-      void loadDebugLogs()
+      if (!apiKey.trim()) {
+        void loadDebugLogs()
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -139,6 +159,21 @@ function App() {
             Print / save as PDF
           </button>
         </div>
+
+        <label className="field field-compact">
+          <span>API key</span>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(event) => setApiKey(event.target.value)}
+            placeholder="Paste a Volcengine Ark API key to generate directly from the browser"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <small className="field-help">
+            If you fill this in, the app will call Ark directly from the page, which is suitable for GitHub hosting. If left blank, local dev will use the backend `.env` setup.
+          </small>
+        </label>
 
         <div className="status-card">
           <strong>Status</strong>
