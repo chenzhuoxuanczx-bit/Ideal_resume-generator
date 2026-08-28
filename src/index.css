@@ -1,0 +1,42 @@
+:root {
+  --text: #2f2923;
+  --text-h: #18130f;
+  --bg: #e7e1d8;
+  --border: #d2c6b6;
+  --sans: 'IBM Plex Sans', 'Avenir Next', 'Segoe UI', sans-serif;
+  --heading: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+  --mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  font: 16px/1.5 var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
